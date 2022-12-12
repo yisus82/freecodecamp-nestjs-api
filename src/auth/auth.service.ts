@@ -3,6 +3,8 @@ import {
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { JwtService } from '@nestjs/jwt';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime';
 import * as argon2 from 'argon2';
 import { PrismaService } from '../prisma/prisma.service';
@@ -10,7 +12,12 @@ import { AuthDTO } from './dto';
 
 @Injectable()
 export class AuthService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private jwt: JwtService,
+    private config: ConfigService,
+  ) {}
+
   async signup(dto: AuthDTO) {
     const hashedPassword = await argon2.hash(dto.password);
     try {
@@ -24,7 +31,8 @@ export class AuthService {
           email: true,
         },
       });
-      return user;
+
+      return this.signToken(user.id, user.email);
     } catch (error) {
       if (error instanceof PrismaClientKnownRequestError) {
         if (error.code === 'P2002') {
@@ -42,18 +50,18 @@ export class AuthService {
           email: dto.email,
         },
         select: {
+          id: true,
           email: true,
           password: true,
-          firstName: true,
-          lastName: true,
         },
       });
       const passwordMatches = await argon2.verify(user.password, dto.password);
+
       if (!passwordMatches) {
         throw new UnauthorizedException('Invalid email or password');
       }
-      delete user.password;
-      return user;
+
+      return this.signToken(user.id, user.email);
     } catch (error) {
       if (error instanceof PrismaClientKnownRequestError) {
         if (error.code === 'P2025') {
@@ -62,5 +70,25 @@ export class AuthService {
       }
       throw error;
     }
+  }
+
+  async signToken(
+    userId: number,
+    email: string,
+  ): Promise<{ access_token: string }> {
+    const payload = {
+      sub: userId,
+      email,
+    };
+    const secret = this.config.get('JWT_SECRET');
+
+    const token = await this.jwt.signAsync(payload, {
+      expiresIn: '15m',
+      secret,
+    });
+
+    return {
+      access_token: token,
+    };
   }
 }
