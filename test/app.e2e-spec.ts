@@ -19,6 +19,7 @@ describe('App e2e', () => {
       }),
     );
     await app.init();
+    await app.listen(+process.env.PORT || 4444);
 
     prisma = app.get(PrismaService);
     await prisma.cleanDB();
@@ -28,5 +29,45 @@ describe('App e2e', () => {
     await app.close();
   });
 
-  it.todo('should pass');
+  describe('Auth', () => {
+    describe('Sign up', () => {
+      it.todo('should sign up');
+    });
+
+    describe('Sign in', () => {
+      it.todo('should sign in');
+    });
+  });
+
+  describe('User', () => {
+    describe('Get me', () => {
+      it.todo('should get me');
+    });
+
+    describe('Edit user', () => {
+      it.todo('should edit user');
+    });
+  });
+
+  describe('Bookmark', () => {
+    describe('Create bookmark', () => {
+      it.todo('should create bookmark');
+    });
+
+    describe('Get bookmarks', () => {
+      it.todo('should get bookmarks');
+    });
+
+    describe('Get bookmark by ID', () => {
+      it.todo('should get bookmark by ID');
+    });
+
+    describe('Edit bookmark', () => {
+      it.todo('should edit bookmark');
+    });
+
+    describe('Delete bookmark', () => {
+      it.todo('should delete bookmark');
+    });
+  });
 });
